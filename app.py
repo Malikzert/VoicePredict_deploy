@@ -6,7 +6,11 @@ import librosa
 import os
 import tempfile
 from utils.predict import predict_sound
-from st_audiorec import st_audiorec
+try:
+    from st_audiorec import st_audiorec
+except ModuleNotFoundError:
+    from streamlit_audiorec import st_audiorec
+
 
 # ============================
 # Load model
