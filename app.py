@@ -69,7 +69,18 @@ elif option == "📁 Upload file (.wav)":
 if audio_data is not None:
     with st.spinner("🎧 Mengekstraksi fitur suara..."):
         y, sr = librosa.load(audio_data, sr=None)
-        mfcc = np.mean(librosa.feature.mfcc(y=y, sr=sr, n_mfcc=20).T, axis=0)
+        y, _ = librosa.effects.trim(y)
+        y = librosa.util.normalize(y)
+
+        # Sama seperti di train_voice_model.py
+        mfcc = librosa.feature.mfcc(y=y, sr=sr, n_mfcc=20)
+        mfcc_mean = np.mean(mfcc, axis=1)
+        mfcc_var = np.var(mfcc, axis=1)
+        mfcc_delta = librosa.feature.delta(mfcc)
+        mfcc_delta_mean = np.mean(mfcc_delta, axis=1)
+
+        mfcc = np.concatenate([mfcc_mean, mfcc_var, mfcc_delta_mean])  # total 60 dimensi
+
 
     # Prediksi siapa pembicara
     with st.spinner("🔍 Mengenali siapa yang berbicara..."):
