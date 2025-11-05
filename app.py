@@ -82,7 +82,7 @@ if audio_data is not None:
             confidence = 1.0
 
     # Ambang batas hasil evaluasi dataset
-    CONFIDENCE_THRESHOLD = 0.85
+    CONFIDENCE_THRESHOLD = 0.6
 
     # Default nilai prediksi jenis suara
     sound_pred = "-"
