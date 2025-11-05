@@ -32,7 +32,7 @@ for user in os.listdir(DATASET_DIR):
 columns = ["label"] + [f"mfcc_{i}" for i in range(1, 21)]
 df = pd.DataFrame(data, columns=columns)
 df.to_csv(OUTPUT_CSV, index=False)
-print(f" Dataset suara disimpan di {OUTPUT_CSV}")
+print(f"✅ Dataset suara disimpan di {OUTPUT_CSV}")
 
 # ===== Latih model =====
 X = df.drop(columns=["label"])
@@ -40,7 +40,33 @@ y = df["label"]
 
 model = RandomForestClassifier(n_estimators=100, random_state=42)
 model.fit(X, y)
-print("Model voice recognizer berhasil dilatih!")
+print("✅ Model voice recognizer berhasil dilatih!")
 
 joblib.dump(model, MODEL_PATH)
-print(f" Model disimpan ke {MODEL_PATH}")
+print(f"💾 Model disimpan ke {MODEL_PATH}")
+
+# ============================
+# 🔍 Evaluasi Confidence dari Dataset
+# ============================
+probs = model.predict_proba(X)
+preds = model.predict(X)
+
+confidences = []
+for i in range(len(X)):
+    true_label = y.iloc[i]
+    pred_label = preds[i]
+    prob = probs[i][np.argmax(probs[i])]
+    if pred_label == true_label:
+        confidences.append(prob)
+
+if confidences:
+    avg_confidence = np.mean(confidences)
+    min_confidence = np.min(confidences)
+    max_confidence = np.max(confidences)
+
+    print("\n📊 Evaluasi Confidence di Dataset:")
+    print(f" - Rata-rata confidence benar : {avg_confidence:.2f}")
+    print(f" - Confidence minimum benar   : {min_confidence:.2f}")
+    print(f" - Confidence maksimum benar  : {max_confidence:.2f}")
+else:
+    print("\n Tidak ada prediksi yang benar di dataset untuk menghitung confidence.")

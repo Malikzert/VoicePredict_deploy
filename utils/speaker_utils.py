@@ -26,15 +26,21 @@ def extract_speaker_features(file_path):
         print(f"⚠️ Error extracting speaker features: {e}")
         return None
 
-def predict_speaker(file_path):
-    """Prediksi siapa yang berbicara"""
+
+def predict_speaker(file_path, threshold=0.85):
+    """Prediksi siapa yang berbicara dengan confidence threshold"""
     model = joblib.load(SPEAKER_MODEL_PATH)
     features = extract_speaker_features(file_path)
     if features is None:
         return None, 0.0
-    
-    # Prediksi siapa yang berbicara dan confidence score (probabilitas)
+
+    # Prediksi dan hitung confidence
     probs = model.predict_proba([features])[0]
     pred_label = model.classes_[np.argmax(probs)]
     confidence = np.max(probs)
-    return pred_label, confidence
+
+    # Gunakan threshold dari hasil evaluasi dataset
+    if confidence < threshold:
+        return "Unknown", confidence
+    else:
+        return pred_label, confidence
