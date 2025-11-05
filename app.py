@@ -82,15 +82,14 @@ if audio_data is not None:
         y, _ = librosa.effects.trim(y)
         y = librosa.util.normalize(y)
 
-        # Ekstraksi MFCC (harus sama dengan yang digunakan saat training)
+        # Ekstraksi MFCC (harus sama seperti saat training)
         mfcc = librosa.feature.mfcc(y=y, sr=sr, n_mfcc=20)
         mfcc_mean = np.mean(mfcc, axis=1)
         mfcc_var = np.var(mfcc, axis=1)
         mfcc_delta = librosa.feature.delta(mfcc)
         mfcc_delta_mean = np.mean(mfcc_delta, axis=1)
-        mfcc_features = np.concatenate([mfcc_mean, mfcc_var, mfcc_delta_mean])
 
-        # Normalisasi fitur dengan scaler dari model
+        mfcc_features = np.concatenate([mfcc_mean, mfcc_var, mfcc_delta_mean])
         mfcc_scaled = voice_scaler.transform([mfcc_features])
 
     # Prediksi siapa pembicara
@@ -103,7 +102,7 @@ if audio_data is not None:
             speaker_pred = voice_model.predict(mfcc_scaled)[0]
             confidence = 1.0
 
-    # Threshold untuk validasi pengguna
+    # Threshold pengenalan pengguna
     CONFIDENCE_THRESHOLD = 0.6
     sound_pred = "-"
     status = "Unknown"
@@ -145,7 +144,7 @@ if audio_data is not None:
 
     st.info("🧾 Log hasil disimpan di `logs/voice_log.csv`")
 
-    # Bersihkan file sementara
+    # Hapus file sementara
     try:
         os.remove(audio_data)
     except Exception:

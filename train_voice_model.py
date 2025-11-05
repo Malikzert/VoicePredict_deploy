@@ -1,11 +1,11 @@
 # ===========================================
-# train_voice_model.py (SVM + MFCC_ + 60 Fitur)
+# train_voice_model.py (RandomForest + MFCC_ + 60 Fitur)
 # ===========================================
 import os
 import numpy as np
 import pandas as pd
 import librosa
-from sklearn.svm import SVC
+from sklearn.ensemble import RandomForestClassifier
 from sklearn.preprocessing import StandardScaler
 import joblib
 
@@ -73,18 +73,16 @@ scaler = StandardScaler()
 X_scaled = scaler.fit_transform(X)
 
 # ============================
-# Latih Model SVM
+# Latih Model RandomForest
 # ============================
-model = SVC(
-    kernel="rbf",
-    probability=True,
-    C=10,
-    gamma="scale",
-    random_state=42
+model = RandomForestClassifier(
+    n_estimators=300,
+    random_state=42,
+    class_weight="balanced",
 )
 model.fit(X_scaled, y)
 
-print("✅ Model voice recognizer (SVM) berhasil dilatih!")
+print("✅ Model voice recognizer (RandomForestClassifier) berhasil dilatih!")
 
 # Simpan Model + Scaler
 joblib.dump({"model": model, "scaler": scaler}, MODEL_PATH)
