@@ -82,15 +82,25 @@ if audio_data is not None:
         y, _ = librosa.effects.trim(y)
         y = librosa.util.normalize(y)
 
-        # Ekstraksi MFCC (harus sama seperti saat training)
+        # Ekstraksi MFCC identik dengan saat training
         mfcc = librosa.feature.mfcc(y=y, sr=sr, n_mfcc=20)
-        mfcc_mean = np.mean(mfcc, axis=1)
-        mfcc_var = np.var(mfcc, axis=1)
         mfcc_delta = librosa.feature.delta(mfcc)
-        mfcc_delta_mean = np.mean(mfcc_delta, axis=1)
+        mfcc_delta2 = librosa.feature.delta(mfcc, order=2)
 
-        mfcc_features = np.concatenate([mfcc_mean, mfcc_var, mfcc_delta_mean])
+        # Ambil statistik mean + std biar lebih robust
+        mfcc_mean = np.mean(mfcc, axis=1)
+        mfcc_std = np.std(mfcc, axis=1)
+        delta_mean = np.mean(mfcc_delta, axis=1)
+        delta_std = np.std(mfcc_delta, axis=1)
+        delta2_mean = np.mean(mfcc_delta2, axis=1)
+        delta2_std = np.std(mfcc_delta2, axis=1)
+
+        # Gabungkan semua jadi satu vektor
+        mfcc_features = np.concatenate([mfcc_mean, mfcc_std, delta_mean, delta_std, delta2_mean, delta2_std])
+
+        # Normalisasi sesuai scaler training
         mfcc_scaled = voice_scaler.transform([mfcc_features])
+
 
     # Prediksi siapa pembicara
     with st.spinner("🔍 Mengenali siapa yang berbicara..."):

@@ -19,3 +19,6 @@ timestamp,speaker_pred,confidence,sound_pred,status
 2025-11-05 12:47:56,user1,0.749,buka,Recognized
 2025-11-05 12:48:46,user1,0.773,buka,Recognized
 2025-11-05 12:52:22,user1,0.773,buka,Recognized
+2025-11-05 12:54:09,user1,0.787,buka,Recognized
+2025-11-05 12:54:48,user1,0.917,buka,Recognized
+2025-11-05 12:55:15,user1,0.837,buka,Recognized
