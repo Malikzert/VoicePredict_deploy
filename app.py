@@ -7,7 +7,9 @@ import os
 import tempfile
 from datetime import datetime
 
-# Coba impor st_audiorec dari 2 kemungkinan nama modul
+# ============================
+# Coba impor st_audiorec dari dua kemungkinan modul
+# ============================
 try:
     from st_audiorec import st_audiorec
 except ModuleNotFoundError:
@@ -16,24 +18,32 @@ except ModuleNotFoundError:
 from utils.predict import predict_sound
 
 # ============================
-# Load model
+# Path & Persiapan
 # ============================
 VOICE_MODEL_PATH = "models/voice_recognizer.pkl"
 SOUND_MODEL_PATH = "models/classifier.pkl"
 LOG_PATH = "logs/voice_log.csv"
+os.makedirs("logs", exist_ok=True)
 
-os.makedirs("logs", exist_ok=True)  # pastikan folder log ada
-
+# ============================
+# Load Model & Scaler
+# ============================
 try:
-    voice_model = joblib.load(VOICE_MODEL_PATH)
+    voice_bundle = joblib.load(VOICE_MODEL_PATH)
+    voice_model = voice_bundle["model"]
+    voice_scaler = voice_bundle["scaler"]
+
     sound_model = joblib.load(SOUND_MODEL_PATH)
 except Exception as e:
     st.error(f"❌ Gagal memuat model: {e}")
     st.stop()
 
+# ============================
+# UI Utama
+# ============================
 st.set_page_config(page_title="Voice-Activated Sound Identifier", layout="wide")
-
 st.title("🎤 Identifikasi Suara & Autentikasi Pengguna")
+
 st.markdown("""
 Aplikasi ini hanya mengizinkan **2 orang terdaftar (user1 & user2)** untuk memberikan input suara.  
 Kamu dapat **merekam langsung** dari mikrofon atau **mengunggah file suara (.wav)**.
@@ -64,7 +74,7 @@ elif option == "📁 Upload file (.wav)":
         st.audio(uploaded_file)
 
 # ============================
-# Proses jika ada audio
+# Proses Identifikasi
 # ============================
 if audio_data is not None:
     with st.spinner("🎧 Mengekstraksi fitur suara..."):
@@ -72,30 +82,29 @@ if audio_data is not None:
         y, _ = librosa.effects.trim(y)
         y = librosa.util.normalize(y)
 
-        # Sama seperti di train_voice_model.py
+        # Ekstraksi MFCC (harus sama dengan yang digunakan saat training)
         mfcc = librosa.feature.mfcc(y=y, sr=sr, n_mfcc=20)
         mfcc_mean = np.mean(mfcc, axis=1)
         mfcc_var = np.var(mfcc, axis=1)
         mfcc_delta = librosa.feature.delta(mfcc)
         mfcc_delta_mean = np.mean(mfcc_delta, axis=1)
+        mfcc_features = np.concatenate([mfcc_mean, mfcc_var, mfcc_delta_mean])
 
-        mfcc = np.concatenate([mfcc_mean, mfcc_var, mfcc_delta_mean])  # total 60 dimensi
-
+        # Normalisasi fitur dengan scaler dari model
+        mfcc_scaled = voice_scaler.transform([mfcc_features])
 
     # Prediksi siapa pembicara
     with st.spinner("🔍 Mengenali siapa yang berbicara..."):
         if hasattr(voice_model, "predict_proba"):
-            probs = voice_model.predict_proba([mfcc])[0]
+            probs = voice_model.predict_proba(mfcc_scaled)[0]
             speaker_pred = voice_model.classes_[np.argmax(probs)]
             confidence = np.max(probs)
         else:
-            speaker_pred = voice_model.predict([mfcc])[0]
+            speaker_pred = voice_model.predict(mfcc_scaled)[0]
             confidence = 1.0
 
-    # Ambang batas hasil evaluasi dataset
+    # Threshold untuk validasi pengguna
     CONFIDENCE_THRESHOLD = 0.6
-
-    # Default nilai prediksi jenis suara
     sound_pred = "-"
     status = "Unknown"
 
@@ -105,7 +114,7 @@ if audio_data is not None:
     else:
         st.success(f"✅ Suara dikenali sebagai **{speaker_pred.upper()}** (confidence: {confidence:.2f})")
 
-        # Prediksi jenis suara
+        # Prediksi jenis suara (sound classifier)
         with st.spinner("🎯 Memprediksi jenis suara..."):
             features = predict_sound(audio_data)
             sound_pred = sound_model.predict([features])[0]
@@ -136,7 +145,7 @@ if audio_data is not None:
 
     st.info("🧾 Log hasil disimpan di `logs/voice_log.csv`")
 
-    # Hapus file sementara
+    # Bersihkan file sementara
     try:
         os.remove(audio_data)
     except Exception:
