@@ -66,12 +66,21 @@ if audio_data is not None:
 
     # Prediksi siapa pembicara
     with st.spinner("🔍 Mengenali siapa yang berbicara..."):
-        speaker_pred = voice_model.predict([mfcc])[0]
+        if hasattr(voice_model, "predict_proba"):
+            probs = voice_model.predict_proba([mfcc])[0]
+            speaker_pred = voice_model.classes_[np.argmax(probs)]
+            confidence = np.max(probs)
+        else:
+            speaker_pred = voice_model.predict([mfcc])[0]
+            confidence = 1.0
 
-    if speaker_pred not in ["user1", "user2"]:
-        st.error("🚫 Suara tidak dikenali. Hanya dua pengguna terdaftar yang diizinkan.")
+    # Ambang batas keyakinan minimal
+    CONFIDENCE_THRESHOLD = 0.7
+
+    if confidence < CONFIDENCE_THRESHOLD or speaker_pred not in ["user1", "user2"]:
+        st.error(f"🚫 Suara tidak dikenali (confidence: {confidence:.2f}). Hanya dua pengguna terdaftar yang diizinkan.")
     else:
-        st.success(f"✅ Suara dikenali sebagai **{speaker_pred.upper()}**")
+        st.success(f"✅ Suara dikenali sebagai **{speaker_pred.upper()}** (confidence: {confidence:.2f})")
 
         # Prediksi jenis suara
         with st.spinner("🎯 Memprediksi jenis suara..."):
