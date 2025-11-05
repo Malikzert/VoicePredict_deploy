@@ -75,7 +75,7 @@ if audio_data is not None:
             confidence = 1.0
 
     # Ambang batas keyakinan minimal
-    CONFIDENCE_THRESHOLD = 0.7
+    CONFIDENCE_THRESHOLD = 0.5
 
     if confidence < CONFIDENCE_THRESHOLD or speaker_pred not in ["user1", "user2"]:
         st.error(f"🚫 Suara tidak dikenali (confidence: {confidence:.2f}). Hanya dua pengguna terdaftar yang diizinkan.")
